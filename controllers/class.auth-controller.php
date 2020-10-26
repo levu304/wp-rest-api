@@ -1,10 +1,11 @@
 <?php
 
 final class Auth_Controller {
-    final public function sign_on($request){
+    
+    final public function sign_on($request) {
         $body = json_decode($request->get_body());
         $user = wp_authenticate($body->user_login, $body->user_password);
-        if(!property_exists($user, 'ID')){
+        if (!property_exists($user, 'ID')) {
             return $user;
         }
 
@@ -20,7 +21,7 @@ final class Auth_Controller {
         );
     }
 
-    final public function authentication($request){
+    final public function authentication($request) {
         $headers = apache_request_headers();
         $token = $headers['Authorization'];
         $user_id = $headers['UserID'];
