@@ -2,25 +2,28 @@
 
 final class Role_Controller {
 
-    final public function get_roles($request) {
-        $headers = apache_request_headers();
-        $user_id = $headers['UserID'];
-        if (!user_can($user_id, 'create_users')) {
-            return wp_send_json_error(
-                array(
-                    'message' => 'No permission'
-                ),
-                401
-            );
-        }
+    final public function get_roles($request) {  
         try {
+            $headers = apache_request_headers();
+            $user_id = $headers['UserID'];
+            if (!user_can($user_id, 'promote_users')) {
+                return wp_send_json_error(
+                    array(
+                        'message' => 'No permission'
+                    ),
+                    401
+                );
+            }
             global $wp_roles;
 
             if (!isset($wp_roles)) {
                 $wp_roles = new WP_Roles();
             }
-                
-            return $wp_roles->roles;
+
+            return wp_send_json_success(
+                $wp_roles->roles,
+                200
+            );
         } catch (\Exception $ex) {
             return wp_send_json_error(
                 array(
@@ -32,18 +35,18 @@ final class Role_Controller {
     }
 
     final public function set_role_for_user($request) {
-        $headers = apache_request_headers();
-        $user_id = $headers['UserID'];
-        if (!user_can($user_id, 'create_users')) {
-            return wp_send_json_error(
-                array(
-                    'message' => 'No permission'
-                ),
-                401
-            );
-        }
-
         try {
+            $headers = apache_request_headers();
+            $user_id = $headers['UserID'];
+            if (!user_can($user_id, 'promote_users')) {
+                return wp_send_json_error(
+                    array(
+                        'message' => 'No permission'
+                    ),
+                    401
+                );
+            }
+
             $body = json_decode($request->get_body());
             $change_role_user_id = $request->get_param('user_id');
             $new_role = $body->role;
