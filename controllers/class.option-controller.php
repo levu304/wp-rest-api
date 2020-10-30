@@ -1,83 +1,12 @@
 <?php
 
-final class Role_Controller {
+class Option_Controller {
 
-    final public function get_roles($request) {  
+    final public function add_option($request) {
         try {
             $headers = apache_request_headers();
             $uid = $headers['uid'];
-            if (!user_can($uid, 'promote_users')) {
-                return wp_send_json_error(
-                    array(
-                        'message' => 'No permission'
-                    ),
-                    401
-                );
-            }
-            global $wp_roles;
-
-            if (!isset($wp_roles)) {
-                $wp_roles = new WP_Roles();
-            }
-
-            return wp_send_json_success(
-                (array)$wp_roles->role_objects,
-                200
-            );
-        } catch (\Exception $ex) {
-            return wp_send_json_error(
-                array(
-                    'message' => $ex->getMessage()
-                ),
-                500
-            );
-        } 
-    }
-
-    final public function get_role($request) {  
-        try {
-            $headers = apache_request_headers();
-            $uid = $headers['uid'];
-            if (!user_can($uid, 'promote_users')) {
-                return wp_send_json_error(
-                    array(
-                        'message' => 'No permission'
-                    ),
-                    401
-                );
-            }
-
-            $role_name = $request->get_param('role_name');
-            $role = get_role($role_name);
-
-            if (!isset($role)) {
-                return wp_send_json_error(
-                    array(
-                        'message' => 'Invalid role'
-                    ),
-                    400
-                );
-            }
-
-            return wp_send_json_success(
-                (array)$role,
-                200
-            );
-        } catch (\Exception $ex) {
-            return wp_send_json_error(
-                array(
-                    'message' => $ex->getMessage()
-                ),
-                500
-            );
-        } 
-    }
-
-    final public function add_role($request) {
-        try {
-            $headers = apache_request_headers();
-            $uid = $headers['uid'];
-            if (!user_can($uid, 'promote_users')) {
+            if (!user_can($uid, 'manage_options')) {
                 return wp_send_json_error(
                     array(
                         'message' => 'No permission'
@@ -88,7 +17,7 @@ final class Role_Controller {
 
             $body = json_decode($request->get_body());
 
-            if (!isset($body) || !isset($body->role) || !isset($body->display_name)) {
+            if (!isset($body) || !isset($body->option) || !isset($body->value)) {
                 return wp_send_json_error(
                     array(
                         'message' => 'Invalid request'
@@ -97,12 +26,12 @@ final class Role_Controller {
                 );
             }
 
-            $result = add_role($body->role, $body->display_name, $body->capabilities);
+            $result = add_option($body->option, $body->value, $body->description, false);
 
-            if (!isset($result)) {
+            if (!$result) {
                 return wp_send_json_error(
                     array(
-                        'message' => 'Role already exists'
+                        'message' => 'Option already exists'
                     ),
                     400
                 );
@@ -125,11 +54,11 @@ final class Role_Controller {
         }
     }
 
-    final public function edit_role_capabilities($request) {
+    final public function update_option($request) {
         try {
             $headers = apache_request_headers();
             $uid = $headers['uid'];
-            if (!user_can($uid, 'promote_users')) {
+            if (!user_can($uid, 'manage_options')) {
                 return wp_send_json_error(
                     array(
                         'message' => 'No permission'
@@ -137,8 +66,10 @@ final class Role_Controller {
                     401
                 );
             }
+
             $body = json_decode($request->get_body());
-            if (!isset($body)) {
+
+            if (!isset($body) || !isset($body->option) || !isset($body->value)) {
                 return wp_send_json_error(
                     array(
                         'message' => 'Invalid request'
@@ -146,15 +77,16 @@ final class Role_Controller {
                     400
                 );
             }
-            $capabilities = array();
-            if (isset($body->capabilities)) {
-                $capabilities = $body->capabilities;
-            }
-            $role_name = $request->get_param('role_name');
-            global $wp_roles;
 
-            foreach ($capabilities as $key => $value) {
-                add_cap($role_name, $key, $value);
+            $result = update_option($body->option, $body->value);
+
+            if (!$result) {
+                return wp_send_json_error(
+                    array(
+                        'message' => 'Update failed'
+                    ),
+                    400
+                );
             }
 
             return wp_send_json_success(
@@ -163,7 +95,7 @@ final class Role_Controller {
                 ),
                 200
             );
-            
+
         } catch (\Exception $ex) {
             return wp_send_json_error(
                 array(
@@ -174,11 +106,54 @@ final class Role_Controller {
         }
     }
 
-    final public function remove_role($request) {
+    final public function get_option($request) {
+        try {
+
+            $params = (object)$request->get_query_params();
+
+            if (!isset($params) || !isset($params->option)) {
+                return wp_send_json_error(
+                    array(
+                        'message' => 'Invalid request'
+                    ),
+                    400
+                );
+            }
+
+            $result = get_option($params->option);
+
+            if (is_bool($result)) {
+                return wp_send_json_error(
+                    array(
+                        'message' => 'Option does not exists'
+                    ),
+                    400
+                );
+            }
+
+            $response = array();
+            $response[$params->option] = $result;
+
+            return wp_send_json_success(
+                $response,
+                200
+            );
+
+        } catch (\Exception $ex) {
+            return wp_send_json_error(
+                array(
+                    'message' => $ex->getMessage()
+                ),
+                500
+            );
+        }
+    }
+
+    final public function delete_option($request) {
         try {
             $headers = apache_request_headers();
             $uid = $headers['uid'];
-            if (!user_can($uid, 'promote_users')) {
+            if (!user_can($uid, 'manage_options')) {
                 return wp_send_json_error(
                     array(
                         'message' => 'No permission'
@@ -187,8 +162,27 @@ final class Role_Controller {
                 );
             }
 
-            $role_name = $request->get_param('role_name');
-            remove_role($role_name);
+            $body = json_decode($request->get_body());
+
+            if (!isset($body) || !isset($body->option)) {
+                return wp_send_json_error(
+                    array(
+                        'message' => 'Invalid request'
+                    ),
+                    400
+                );
+            }
+
+            $result = delete_option($body->option);
+
+            if (!$result) {
+                return wp_send_json_error(
+                    array(
+                        'message' => 'Update failed'
+                    ),
+                    400
+                );
+            }
 
             return wp_send_json_success(
                 array(
@@ -196,7 +190,7 @@ final class Role_Controller {
                 ),
                 200
             );
-            
+
         } catch (\Exception $ex) {
             return wp_send_json_error(
                 array(
