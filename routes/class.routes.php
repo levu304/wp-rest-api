@@ -14,6 +14,7 @@ class Wordpress_REST_API {
      * @return void
      */
     public static function init() {
+        header("Access-Control-Allow-Origin: *");
         if (!function_exists('register_rest_route')) {
             return false;
         }
@@ -36,6 +37,15 @@ class Wordpress_REST_API {
                 'methods' => WP_REST_Server::CREATABLE,
                 'callback' => array(
                     'Auth_Controller', 'sign_out'
+                )
+            ),
+        ) );
+
+        register_rest_route( self::$API_ROUTE, '/reset', array(
+            array(
+                'methods' => WP_REST_Server::CREATABLE,
+                'callback' => array(
+                    'Auth_Controller', 'reset_password'
                 )
             ),
         ) );
