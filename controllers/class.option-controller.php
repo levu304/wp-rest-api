@@ -5,8 +5,11 @@ class Option_Controller {
     final public function add_option($request) {
         try {
             $headers = apache_request_headers();
-            $uid = $headers['uid'];
-            if (!user_can($uid, 'manage_options')) {
+            $auth_token = $headers['Authorization'];
+            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
+
+            $user = get_user_by('login', $cookies['username']);
+            if (!user_can($user->ID, 'manage_options')) {
                 return wp_send_json_error(
                     array(
                         'message' => 'No permission'
@@ -57,8 +60,11 @@ class Option_Controller {
     final public function update_option($request) {
         try {
             $headers = apache_request_headers();
-            $uid = $headers['uid'];
-            if (!user_can($uid, 'manage_options')) {
+            $auth_token = $headers['Authorization'];
+            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
+
+            $user = get_user_by('login', $cookies['username']);
+            if (!user_can($user->ID, 'manage_options')) {
                 return wp_send_json_error(
                     array(
                         'message' => 'No permission'
@@ -108,7 +114,19 @@ class Option_Controller {
 
     final public function get_option($request) {
         try {
+            $headers = apache_request_headers();
+            $auth_token = $headers['Authorization'];
+            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
+            $user = get_user_by('login', $cookies['username']);
+            if (!user_can($user->ID, 'manage_options')) {
+                return wp_send_json_error(
+                    array(
+                        'message' => 'No permission'
+                    ),
+                    401
+                );
+            }
             $params = (object)$request->get_query_params();
 
             if (!isset($params) || !isset($params->option)) {
@@ -152,8 +170,11 @@ class Option_Controller {
     final public function delete_option($request) {
         try {
             $headers = apache_request_headers();
-            $uid = $headers['uid'];
-            if (!user_can($uid, 'manage_options')) {
+            $auth_token = $headers['Authorization'];
+            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
+
+            $user = get_user_by('login', $cookies['username']);
+            if (!user_can($user->ID, 'manage_options')) {
                 return wp_send_json_error(
                     array(
                         'message' => 'No permission'
