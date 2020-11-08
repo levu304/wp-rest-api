@@ -37,7 +37,10 @@ class Wordpress_REST_API {
                 'methods' => WP_REST_Server::CREATABLE,
                 'callback' => array(
                     'Auth_Controller', 'sign_out'
-                )
+                ),
+                'permission_callback' => array(
+                    'Auth_Controller', 'authentication'
+                ),
             ),
         ) );
 
@@ -49,16 +52,6 @@ class Wordpress_REST_API {
                 )
             ),
         ) );
-
-        register_rest_route( self::$API_ROUTE, '/session', array(
-            array(
-                'methods' => WP_REST_Server::READABLE,
-                'callback' => array(
-                    'Auth_Controller', 'get_current_user_session'
-                )
-            ),
-        ) );
-
 
         /**
          * ROLE CONTROLLER
@@ -143,6 +136,9 @@ class Wordpress_REST_API {
                 'callback' => array(
                     'Option_Controller', 'get_option'
                 ),
+                'permission_callback' => array(
+                    'Auth_Controller', 'authentication'
+                ),
             ),
             array(
                 'methods' => WP_REST_Server::EDITABLE,
@@ -156,7 +152,7 @@ class Wordpress_REST_API {
             array(
                 'methods' => WP_REST_Server::DELETABLE,
                 'callback' => array(
-                    'v', 'delete_option'
+                    'Option_Controller', 'delete_option'
                 ),
                 'permission_callback' => array(
                     'Auth_Controller', 'authentication'
