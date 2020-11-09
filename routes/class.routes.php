@@ -3,6 +3,7 @@
 require_once( API__PLUGIN_DIR . 'controllers/class.role-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.auth-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.option-controller.php' );
+require_once( API__PLUGIN_DIR . 'controllers/class.user-controller.php' );
 
 class Wordpress_REST_API {
 
@@ -13,7 +14,7 @@ class Wordpress_REST_API {
      *
      * @return void
      */
-    public static function init() {
+    public function init() {
         header("Access-Control-Allow-Origin: *");
         if (!function_exists('register_rest_route')) {
             return false;
@@ -160,5 +161,27 @@ class Wordpress_REST_API {
             ),
         ) );
 
+        /**
+         * USER CONTROLLER
+         */
+
+        register_rest_route(
+			self::$API_ROUTE, '/users',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( 'User_Controller', 'get_users' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => array( 'User_Controller', 'get_collection_params' ),
+				),
+				// array(
+				// 	'methods'             => WP_REST_Server::CREATABLE,
+				// 	'callback'            => array( $this, 'create_item' ),
+				// 	'permission_callback' => array( $this, 'create_item_permissions_check' ),
+				// 	'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+				// ),
+				// 'schema' => array( $this, 'get_public_item_schema' ),
+			)
+        );
     }
 }
