@@ -183,7 +183,7 @@ class Wordpress_REST_API {
 					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
 					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
 				),
-                'schema' => $rest_controller->get_rest_public_item_schema(),
+                'schema' => array( 'REST_controller', 'get_rest_public_item_schema' ),
 			)
         );
 
@@ -229,7 +229,7 @@ class Wordpress_REST_API {
 						),
 					),
 				),
-				'schema' => $rest_controller->get_public_item_schema(),
+				'schema' => array( 'REST_controller', 'get_rest_public_item_schema' ),
 			)
         );
 
