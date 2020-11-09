@@ -1,11 +1,11 @@
 <?php
 
-final class Role_Controller {
+class Role_Controller {
 
-    final public function get_roles($request) {  
+    public function get_roles($request) {  
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);
@@ -37,10 +37,10 @@ final class Role_Controller {
         } 
     }
 
-    final public function get_role($request) {  
+    public function get_role($request) {  
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);
@@ -79,10 +79,10 @@ final class Role_Controller {
         } 
     }
 
-    final public function add_role($request) {
+    public function add_role($request) {
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);
@@ -134,10 +134,10 @@ final class Role_Controller {
         }
     }
 
-    final public function edit_role_capabilities($request) {
+    public function edit_role_capabilities($request) {
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);
@@ -186,10 +186,10 @@ final class Role_Controller {
         }
     }
 
-    final public function remove_role($request) {
+    public function remove_role($request) {
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);

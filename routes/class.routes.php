@@ -1,8 +1,10 @@
 <?php
 
+require_once( API__PLUGIN_DIR . 'controllers/class.rest-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.role-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.auth-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.option-controller.php' );
+require_once( API__PLUGIN_DIR . 'controllers/class.user-controller.php' );
 
 class Wordpress_REST_API {
 
@@ -13,11 +15,13 @@ class Wordpress_REST_API {
      *
      * @return void
      */
-    public static function init() {
+    public function init() {
         header("Access-Control-Allow-Origin: *");
         if (!function_exists('register_rest_route')) {
             return false;
         }
+
+        $rest_controller = new REST_Controller;
 
         /**
          * AUTHENTICATION CONTROLLER
@@ -159,6 +163,75 @@ class Wordpress_REST_API {
                 ),
             ),
         ) );
+
+        /**
+         * USER CONTROLLER
+         */
+
+        register_rest_route(
+			self::$API_ROUTE, '/users',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( 'User_Controller', 'get_users' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => array( 'User_Controller', 'get_collection_params' ),
+				),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( 'User_Controller', 'create_user' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
+				),
+                'schema' => $rest_controller->get_rest_public_item_schema(),
+			)
+        );
+
+        register_rest_route(
+			self::$API_ROUTE,
+			'/users/(?P<id>[\d]+)',
+			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'Unique identifier for the user.' ),
+						'type'        => 'integer',
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( 'User_Controller', 'get_user' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => array(
+						'context' => $rest_controller->get_context_param( array( 'default' => 'view' ) ),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+                    'callback'            => array( 'User_Controller', 'update_user' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( 'User_Controller', 'delete_user' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => array(
+						'force'    => array(
+							'type'        => 'boolean',
+							'default'     => false,
+							'description' => __( 'Required to be true, as users do not support trashing.' ),
+						),
+						'reassign' => array(
+							'type'              => 'integer',
+							'description'       => __( 'Reassign the deleted user\'s posts and links to this user ID.' ),
+							'required'          => true,
+							'sanitize_callback' => array( 'User_Controller', 'check_reassign' ),
+						),
+					),
+				),
+				'schema' => $rest_controller->get_public_item_schema(),
+			)
+        );
 
     }
 }
