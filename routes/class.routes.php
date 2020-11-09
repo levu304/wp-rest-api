@@ -181,10 +181,57 @@ class Wordpress_REST_API {
 					'methods'             => WP_REST_Server::CREATABLE,
 					'callback'            => array( 'User_Controller', 'create_user' ),
 					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
-					'args'                => $rest_controller->get_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
+					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
 				),
-                'schema' => $rest_controller->get_public_item_schema(),
+                'schema' => $rest_controller->get_rest_public_item_schema(),
 			)
         );
+
+        register_rest_route(
+			self::$API_ROUTE,
+			'/users/(?P<id>[\d]+)',
+			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'Unique identifier for the user.' ),
+						'type'        => 'integer',
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( 'User_Controller', 'get_user' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => array(
+						'context' => $rest_controller->get_context_param( array( 'default' => 'view' ) ),
+					),
+				),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+                    'callback'            => array( 'User_Controller', 'update_user' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+				),
+				array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( 'User_Controller', 'delete_user' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => array(
+						'force'    => array(
+							'type'        => 'boolean',
+							'default'     => false,
+							'description' => __( 'Required to be true, as users do not support trashing.' ),
+						),
+						'reassign' => array(
+							'type'              => 'integer',
+							'description'       => __( 'Reassign the deleted user\'s posts and links to this user ID.' ),
+							'required'          => true,
+							'sanitize_callback' => array( 'User_Controller', 'check_reassign' ),
+						),
+					),
+				),
+				'schema' => $rest_controller->get_public_item_schema(),
+			)
+        );
+
     }
 }
