@@ -2,12 +2,12 @@
 
 require_once( 'class.rest-controller.php' );
 
-class User_Controller extends WP_REST_Users_Controller {
+class User_Controller {
 
     public function get_users($request) {
         $controller = new WP_REST_Users_Controller;
 
-        $result = $controller->get_items_permissions_check($request);
+        $result = self::get_items_permissions_check($request);
         if(is_wp_error($result)) {
             return wp_send_json_error(
                 $result,
@@ -92,15 +92,13 @@ class User_Controller extends WP_REST_Users_Controller {
 		 */
         $prepared_args = apply_filters( 'rest_user_query', $prepared_args, $params );
         
-        return $prepared_args;
-
 		$query = new WP_User_Query( $prepared_args );
 
 		$users = array();
 
 		foreach ( $query->results as $u ) {
-			$data    = $controller->prepare_item_for_response( $u, $params );
-			$users[] = $controller->prepare_response_for_collection( $data );
+			$data    = $controller->prepare_item_for_response( $u, $request );
+            $users[] = $controller->prepare_response_for_collection( $data );
         }
         
 		$response = rest_ensure_response( $users );
@@ -125,7 +123,7 @@ class User_Controller extends WP_REST_Users_Controller {
 
 		$response->header( 'X-WP-Total', (int) $total_users );
 
-		$max_pages = ceil( $total_users / $per_page == 0 ? 1 : $per_page );
+		$max_pages = ceil( $total_users / $per_page );
 
 		$response->header( 'X-WP-TotalPages', (int) $max_pages );
 
@@ -236,5 +234,44 @@ class User_Controller extends WP_REST_Users_Controller {
 		}
 
 		return new WP_Error( 'rest_invalid_param', __( 'Invalid user parameter(s).' ), array( 'status' => 400 ) );
+    }
+    
+    private function get_items_permissions_check( $request ) {
+
+        $headers = apache_request_headers();
+        $auth_cookie = $headers['Authorization'];
+        $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
+
+        $user = get_user_by('login', $cookies['username']);
+        $params = (array)$request->get_query_params();
+
+		// Check if roles is specified in GET request and if user can list users.
+		if ( ! empty( $request['roles'] ) && ! user_can($user->ID, 'list_users') ) {
+			return new WP_Error( 'rest_user_cannot_view', __( 'Sorry, you are not allowed to filter users by role.' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
+		if ( 'edit' === $request['context'] && ! user_can($user->ID, 'list_users') ) {
+			return new WP_Error( 'rest_forbidden_context', __( 'Sorry, you are not allowed to list users.' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
+		if ( in_array( $request['orderby'], array( 'email', 'registered_date' ), true ) && ! user_can($user->ID, 'list_users') ) {
+			return new WP_Error( 'rest_forbidden_orderby', __( 'Sorry, you are not allowed to order users by this parameter.' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
+		if ( 'authors' === $params['who'] ) {
+			$can_view = false;
+			$types    = get_post_types( array( 'show_in_rest' => true ), 'objects' );
+			foreach ( $types as $type ) {
+				if ( post_type_supports( $type->name, 'author' )
+					&& user_can( $user->ID, $type->cap->edit_posts ) ) {
+					$can_view = true;
+				}
+			}
+			if ( ! $can_view ) {
+				return new WP_Error( 'rest_forbidden_who', __( 'Sorry, you are not allowed to query users by this parameter.' ), array( 'status' => rest_authorization_required_code() ) );
+			}
+		}
+
+		return true;
 	}
 }
