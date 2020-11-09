@@ -1,5 +1,6 @@
 <?php
 
+require_once( API__PLUGIN_DIR . 'controllers/class.rest-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.role-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.auth-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.option-controller.php' );
@@ -19,6 +20,8 @@ class Wordpress_REST_API {
         if (!function_exists('register_rest_route')) {
             return false;
         }
+
+        $rest_controller = new REST_Controller;
 
         /**
          * AUTHENTICATION CONTROLLER
@@ -174,13 +177,13 @@ class Wordpress_REST_API {
 					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
 					'args'                => array( 'User_Controller', 'get_collection_params' ),
 				),
-				// array(
-				// 	'methods'             => WP_REST_Server::CREATABLE,
-				// 	'callback'            => array( $this, 'create_item' ),
-				// 	'permission_callback' => array( $this, 'create_item_permissions_check' ),
-				// 	'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
-				// ),
-				// 'schema' => array( $this, 'get_public_item_schema' ),
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( 'User_Controller', 'create_user' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => $rest_controller->get_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
+				),
+                'schema' => $rest_controller->get_public_item_schema(),
 			)
         );
     }
