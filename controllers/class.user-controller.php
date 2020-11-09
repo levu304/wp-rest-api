@@ -98,7 +98,10 @@ class User_Controller {
 
 		foreach ( $query->results as $u ) {
 			$data    = $controller->prepare_item_for_response( $u, $request );
-            $users[] = $controller->prepare_response_for_collection( $data );
+			$response_data = $controller->prepare_response_for_collection( $data );
+			$posts = (int)count_user_posts($u->ID);
+			$response_data['posts'] = $posts;
+            $users[] = $response_data;
         }
         
 		$response = rest_ensure_response( $users );
