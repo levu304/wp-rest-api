@@ -2,10 +2,10 @@
 
 class Option_Controller {
 
-    final public function add_option($request) {
+    public function add_option($request) {
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);
@@ -57,10 +57,10 @@ class Option_Controller {
         }
     }
 
-    final public function update_option($request) {
+    public function update_option($request) {
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);
@@ -112,10 +112,10 @@ class Option_Controller {
         }
     }
 
-    final public function get_option($request) {
+    public function get_option($request) {
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);
@@ -167,10 +167,10 @@ class Option_Controller {
         }
     }
 
-    final public function delete_option($request) {
+    public function delete_option($request) {
         try {
             $headers = apache_request_headers();
-            $auth_token = $headers['Authorization'];
+            $auth_cookie = $headers['Authorization'];
             $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
 
             $user = get_user_by('login', $cookies['username']);
