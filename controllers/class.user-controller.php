@@ -90,7 +90,9 @@ class User_Controller extends WP_REST_Users_Controller {
 		 * @param array           $prepared_args Array of arguments for WP_User_Query.
 		 * @param WP_REST_Request $request       The current request.
 		 */
-		$prepared_args = apply_filters( 'rest_user_query', $prepared_args, $params );
+        $prepared_args = apply_filters( 'rest_user_query', $prepared_args, $params );
+        
+        return $prepared_args;
 
 		$query = new WP_User_Query( $prepared_args );
 
@@ -104,8 +106,11 @@ class User_Controller extends WP_REST_Users_Controller {
 		$response = rest_ensure_response( $users );
 
 		// Store pagination values for headers then unset for count query.
-        $per_page = (int) $prepared_args['offset'];
-		$page     = ceil( ( ( (int) $prepared_args['offset'] ) / $per_page ) + 1 );
+        $per_page = (int) $prepared_args['number'];
+        if($per_page == 0){
+            $per_page = 1;
+        }
+        $page = ceil( ( ( (int) $prepared_args['offset'] ) / $per_page ) + 1 );
 
 		$prepared_args['fields'] = 'ID';
 
@@ -120,7 +125,7 @@ class User_Controller extends WP_REST_Users_Controller {
 
 		$response->header( 'X-WP-Total', (int) $total_users );
 
-		$max_pages = ceil( $total_users / $per_page );
+		$max_pages = ceil( $total_users / $per_page == 0 ? 1 : $per_page );
 
 		$response->header( 'X-WP-TotalPages', (int) $max_pages );
 
