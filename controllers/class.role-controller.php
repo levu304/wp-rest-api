@@ -23,8 +23,12 @@ class Role_Controller {
                 $wp_roles = new WP_Roles();
             }
 
+            foreach ($wp_roles->role_objects as $key => $value) {
+                $roles[] = $value;
+            }
+
             return wp_send_json_success(
-                (array)$wp_roles->role_objects,
+                $roles,
                 200
             );
         } catch (\Exception $ex) {
