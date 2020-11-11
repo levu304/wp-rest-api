@@ -172,20 +172,131 @@ class User_Controller {
     }
 
     public function create_user( $request ) {
-        $controller = new WP_REST_Users_Controller;
+		
+		$headers = apache_request_headers();
+        $auth_cookie = $headers['Authorization'];
+		$cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
+		
+		$user = get_user_by('login', $cookies['username']);
+				
+		if ( ! user_can($user->ID, 'create_users') ) {
+			return new WP_Error( 'rest_cannot_create_user', __( 'Sorry, you are not allowed to create new users.' ), array( 'status' => rest_authorization_required_code() ) );
+		}
 
-        $result = $controller->create_item_permissions_check($request);
-        if(is_wp_error($result)) {
-            return wp_send_json_error(
-                $result,
-                400
-            );
-        }
+		$controller = new WP_REST_Users_Controller;
+		$rest_controller = new REST_controller;
 
-        return wp_send_json_success(
-            $controller->create_item($request),
-            200
-        );
+		$schema = $controller->get_item_schema();
+		$body = json_decode($request->get_body());		
+
+		if ( ! empty( $body->roles ) && ! empty( $schema['properties']['roles'] ) ) {
+			$check_permission = self::check_role_update( $user->ID, $body->roles );
+
+			if ( is_wp_error( $check_permission ) ) {
+				return $check_permission;
+			}
+		}
+
+		$newUser = self::prepare_item_for_database( $body );
+
+		if ( is_multisite() ) {
+			$ret = wpmu_validate_user_signup( $newUser->user_login, $newUser->user_email );
+
+			if ( is_wp_error( $ret['errors'] ) && $ret['errors']->has_errors() ) {
+				$error = new WP_Error( 'rest_invalid_param', __( 'Invalid user parameter(s).' ), array( 'status' => 400 ) );
+				foreach ( $ret['errors']->errors as $code => $messages ) {
+					foreach ( $messages as $message ) {
+						$error->add( $code, $message );
+					}
+					$error_data = $error->get_error_data( $code );
+					if ( $error_data ) {
+						$error->add_data( $error_data, $code );
+					}
+				}
+				return $error;
+			}
+		}
+
+		if ( is_multisite() ) {
+			$user_id = wpmu_create_user( $newUser->user_login, $newUser->user_pass, $newUser->user_email );
+
+			if ( ! $user_id ) {
+				return new WP_Error( 'rest_user_create', __( 'Error creating new user.' ), array( 'status' => 500 ) );
+			}
+
+			$user->ID = $user_id;
+			$user_id  = wp_update_user( wp_slash( (array) $newUser ) );
+
+			if ( is_wp_error( $user_id ) ) {
+				return $user_id;
+			}
+
+			$result = add_user_to_blog( get_site()->id, $user_id, '' );
+			if ( is_wp_error( $result ) ) {
+				return $result;
+			}
+		} else {
+			$user_id = wp_insert_user( wp_slash( (array) $newUser ) );
+
+			if ( is_wp_error( $user_id ) ) {
+				return $user_id;
+			}
+		}
+
+		$newUser = get_user_by( 'id', $user_id );
+
+		/**
+		 * Fires immediately after a user is created or updated via the REST API.
+		 *
+		 * @since 4.7.0
+		 *
+		 * @param WP_User         $user     Inserted or updated user object.
+		 * @param WP_REST_Request $request  Request object.
+		 * @param bool            $creating True when creating a user, false when updating.
+		 */
+		do_action( 'rest_insert_user', $newUser, $body, true );
+
+		if ( ! empty( $body->roles ) && ! empty( $schema['properties']['roles'] ) ) {
+			array_map( array( $newUser, 'add_role' ), $request['roles'] );
+		}
+
+		if ( ! empty( $schema['properties']['meta'] ) && isset( $body->meta ) ) {
+			$meta_update = $controller->meta->update_value( $body->meta, $user_id );
+
+			if ( is_wp_error( $meta_update ) ) {
+				return $meta_update;
+			}
+		}
+
+		$newUser = get_user_by( 'id', $user_id );
+		$fields_update = $rest_controller->update_additional_fields_for_object( $newUser, $body );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
+
+		$request->set_param( 'context', 'edit' );
+
+		/**
+		 * Fires after a user is completely created or updated via the REST API.
+		 *
+		 * @since 5.0.0
+		 *
+		 * @param WP_User         $user     Inserted or updated user object.
+		 * @param WP_REST_Request $request  Request object.
+		 * @param bool            $creating True when creating a user, false when updating.
+		 */
+		do_action( 'rest_after_insert_user', $newUser, $request, true );
+
+		$response = $controller->prepare_item_for_response( $newUser, $request );
+		$response = rest_ensure_response( $response );
+
+		$response->header( 'Location', rest_url( sprintf( '%s/%s/%d', 'api/v1', 'users', $user_id ) ) );
+
+        return wp_send_json( array(
+            'success' => true,
+            'data' => $response->data
+        ), 201 );
     }
 
     public function update_user( $request ) {
@@ -272,6 +383,115 @@ class User_Controller {
 			}
 			if ( ! $can_view ) {
 				return new WP_Error( 'rest_forbidden_who', __( 'Sorry, you are not allowed to query users by this parameter.' ), array( 'status' => rest_authorization_required_code() ) );
+			}
+		}
+
+		return true;
+	}
+
+	private function prepare_item_for_database( $body ) {
+		$prepared_user = new stdClass;
+
+		$controller = new WP_REST_Users_Controller;
+		$schema = $controller->get_item_schema();
+
+		// required arguments.
+		if ( isset( $body->email ) && ! empty( $schema['properties']['email'] ) ) {
+			$prepared_user->user_email = $body->email;
+		}
+
+		if ( isset( $body->username ) && ! empty( $schema['properties']['username'] ) ) {
+			$prepared_user->user_login = $body->username;
+		}
+
+		if ( isset( $body->password ) && ! empty( $schema['properties']['password'] ) ) {
+			$prepared_user->user_pass = $body->password;
+		}
+
+		if ( isset( $body->name ) && ! empty( $schema['properties']['name'] ) ) {
+			$prepared_user->display_name = $body->name;
+		}
+
+		if ( isset( $body->first_name ) && ! empty( $schema['properties']['first_name'] ) ) {
+			$prepared_user->first_name = $body->first_name;
+		}
+
+		if ( isset( $body->last_name ) && ! empty( $schema['properties']['last_name'] ) ) {
+			$prepared_user->last_name = $body->last_name;
+		}
+
+		if ( isset( $body->nickname ) && ! empty( $schema['properties']['nickname'] ) ) {
+			$prepared_user->nickname = $body->nickname;
+		}
+
+		if ( isset( $body->slug ) && ! empty( $schema['properties']['slug'] ) ) {
+			$prepared_user->user_nicename = $body->slug;
+		}
+
+		if ( isset( $body->description ) && ! empty( $schema['properties']['description'] ) ) {
+			$prepared_user->description = $body->description;
+		}
+
+		if ( isset( $body->url ) && ! empty( $schema['properties']['url'] ) ) {
+			$prepared_user->user_url = $body->url;
+		}
+
+		if ( isset( $body->locale ) && ! empty( $schema['properties']['locale'] ) ) {
+			$prepared_user->locale = $body->locale;
+		}
+
+		// setting roles will be handled outside of this function.
+		if ( isset( $body->roles ) ) {
+			$prepared_user->role = false;
+		}
+
+		/**
+		 * Filters user data before insertion via the REST API.
+		 *
+		 * @since 4.7.0
+		 *
+		 * @param object          $prepared_user User object.
+		 * @param WP_REST_Request $request       Request object.
+		 */
+		return apply_filters( 'rest_pre_insert_user', $prepared_user, $body );
+	}
+
+	private function check_role_update( $user_id, $roles ) {
+		global $wp_roles;
+
+		if (!isset($wp_roles)) {
+            $wp_roles = new WP_Roles();
+        }
+
+		foreach ( $roles as $role ) {
+
+			if ( ! isset( $wp_roles->role_objects[ $role ] ) ) {
+				/* translators: %s: Role key. */
+				return new WP_Error( 'rest_user_invalid_role', sprintf( __( 'The role %s does not exist.' ), $role ), array( 'status' => 400 ) );
+			}
+
+			$potential_role = $wp_roles->role_objects[ $role ];
+
+			/*
+			 * Don't let anyone with 'edit_users' (admins) edit their own role to something without it.
+			 * Multisite super admins can freely edit their blog roles -- they possess all caps.
+			 */
+			if ( ! ( is_multisite()
+				&& user_can($user_id, 'manage_sites' ) )
+				&& get_current_user_id() === $user_id
+				&& ! $potential_role->has_cap( 'edit_users' )
+			) {
+				return new WP_Error( 'rest_user_invalid_role', __( 'Sorry, you are not allowed to give users that role.' ), array( 'status' => rest_authorization_required_code() ) );
+			}
+
+			/** Include admin functions to get access to get_editable_roles() */
+			require_once ABSPATH . 'wp-admin/includes/admin.php';
+
+			// The new role must be editable by the logged-in user.
+			$editable_roles = get_editable_roles();
+
+			if ( empty( $editable_roles[ $role ] ) ) {
+				return new WP_Error( 'rest_user_invalid_role', __( 'Sorry, you are not allowed to give users that role.' ), array( 'status' => 403 ) );
 			}
 		}
 

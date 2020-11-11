@@ -9,4 +9,8 @@ class REST_controller extends WP_REST_Controller {
     public function get_rest_public_item_schema() {
         return parent::get_public_item_schema();
     }
+
+    public function update_additional_fields_for_object( $object, $request ) {
+		return parent::update_additional_fields_for_object($object, $request);
+	}
 }
