@@ -227,19 +227,6 @@ class Wordpress_REST_API {
 					'methods'             => WP_REST_Server::DELETABLE,
 					'callback'            => array( 'User_Controller', 'delete_user' ),
 					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
-					'args'                => array(
-						'force'    => array(
-							'type'        => 'boolean',
-							'default'     => false,
-							'description' => __( 'Required to be true, as users do not support trashing.' ),
-						),
-						'reassign' => array(
-							'type'              => 'integer',
-							'description'       => __( 'Reassign the deleted user\'s posts and links to this user ID.' ),
-							'required'          => true,
-							'sanitize_callback' => array( 'User_Controller', 'check_reassign' ),
-						),
-					),
 				),
 				'schema' => array( 'REST_controller', 'get_rest_public_item_schema' ),
 			)
