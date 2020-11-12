@@ -300,20 +300,104 @@ class User_Controller {
     }
 
     public function update_user( $request ) {
-        $controller = new WP_REST_Users_Controller;
+		$headers = apache_request_headers();
+        $auth_cookie = $headers['Authorization'];
+		$cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
+		
+		$user = get_user_by('login', $cookies['username']);
+		if ( is_wp_error( $user ) ) {
+			return $user;
+		}
 
-        $result = $controller->update_item_permissions_check($request);
-        if(is_wp_error($result)) {
-            return wp_send_json_error(
-                $result,
-                400
-            );
-        }
+		$body = json_decode($request->get_body());
 
-        return wp_send_json_success(
-            $controller->update_item($request),
-            200
-        );
+		if ( ! empty( $body->roles ) ) {
+			if ( ! user_can( $user->ID, 'promote_user' ) ) {
+				return new WP_Error( 'rest_cannot_edit_roles', __( 'Sorry, you are not allowed to edit roles of this user.' ), array( 'status' => rest_authorization_required_code() ) );
+			}
+
+			sort( $body );
+		}
+
+		if ( ! user_can( $user->ID, 'edit_user' ) ) {
+			return new WP_Error( 'rest_cannot_edit', __( 'Sorry, you are not allowed to edit this user.' ), array( 'status' => rest_authorization_required_code() ) );
+		}
+
+		$updateUser = get_user_by('ID', $body->id);
+		if ( ! $user ) {
+			return new WP_Error( 'rest_user_invalid_id', __( 'Invalid user ID.' ), array( 'status' => 404 ) );
+		}
+
+		$id = $updateUser->ID;
+
+		$owner_id = email_exists( $body->email );
+		if ( $owner_id && $owner_id !== $id ) {
+			return new WP_Error( 'rest_user_invalid_email', __( 'Invalid email address.' ), array( 'status' => 400 ) );
+		}
+
+		if ( ! empty( $body->username ) && $body->username !== $updateUser->user_login ) {
+			return new WP_Error( 'rest_user_invalid_argument', __( "Username isn't editable." ), array( 'status' => 400 ) );
+		}
+
+		if ( ! empty( $body->slug ) && $body->slug !== $updateUser->user_nicename && get_user_by( 'slug', $body->slug ) ) {
+			return new WP_Error( 'rest_user_invalid_slug', __( 'Invalid slug.' ), array( 'status' => 400 ) );
+		}
+
+		if ( ! empty( $body->roles ) ) {
+			$check_permission = self::check_role_update( $id, $body->roles );
+
+			if ( is_wp_error( $check_permission ) ) {
+				return $check_permission;
+			}
+		}
+
+		$updateUser = self::prepare_item_for_database( $body );
+		$updateUser->ID = $id;
+		$user_id = wp_update_user( wp_slash( (array) $updateUser ) );
+		
+        if ( is_wp_error( $user_id ) ) {
+			return $user_id;
+		}
+
+		$updateUser = get_user_by( 'id', $user_id );
+		do_action( 'rest_insert_user', $user, $request, false );
+
+		if ( ! empty( $body->roles ) ) {
+			array_map( array( $updateUser, 'add_role' ), $body->roles );
+		}
+
+		$controller = new WP_REST_Users_Controller;
+		$rest_controller = new REST_controller;
+
+		$schema = $controller->get_item_schema();
+
+		if ( ! empty( $schema['properties']['meta'] ) && isset( $body->meta ) ) {
+			$meta_update = $this->controller->update_value( $body->meta, $id );
+
+			if ( is_wp_error( $meta_update ) ) {
+				return $meta_update;
+			}
+		}
+
+		$updateUser = get_user_by( 'id', $user_id );
+		$fields_update = $rest_controller->update_additional_fields_for_object( $updateUser, $body );
+
+		if ( is_wp_error( $fields_update ) ) {
+			return $fields_update;
+		}
+
+		$request->set_param( 'context', 'edit' );
+
+		/** This action is documented in wp-includes/rest-api/endpoints/class-wp-rest-users-controller.php */
+		do_action( 'rest_after_insert_user', $updateUser, $request, false );
+
+		$response = $controller->prepare_item_for_response( $updateUser, $request );
+		$response = rest_ensure_response( $response );
+
+		return wp_send_json( array(
+            'success' => true,
+            'data' => $response->data
+        ), 200 );
     }
 
     public function delete_user( $request ) {		
@@ -370,7 +454,27 @@ class User_Controller {
 
 		return $response;
 
-    }
+	}
+	
+	public function generate_password($request) {
+		try {
+
+			$hashPassword = wp_generate_password();
+
+			return wp_send_json( array(
+				'success' => true,
+				'data' => $hashPassword
+			), 200 );
+            
+        } catch (\Exception $ex) {
+            return wp_send_json_error(
+                array(
+                    'message' => $ex->getMessage()
+                ),
+                500
+            );
+        } 
+	}
 
     public function get_collection_params() {
         $controller = new WP_REST_Users_Controller;
