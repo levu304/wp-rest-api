@@ -4,6 +4,7 @@ require_once( API__PLUGIN_DIR . 'controllers/class.rest-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.role-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.auth-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.option-controller.php' );
+require_once( API__PLUGIN_DIR . 'controllers/class.settings-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.user-controller.php' );
 
 class Wordpress_REST_API {
@@ -238,6 +239,21 @@ class Wordpress_REST_API {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( 'User_Controller', 'generate_password' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+				),
+			)
+        );
+
+        /**
+         * SETTINGS CONTROLLER
+         */
+
+        register_rest_route(
+			self::$API_ROUTE, '/settings/languages',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( 'Settings_Controller', 'get_languages' ),
 					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
 				),
 			)
