@@ -43,10 +43,30 @@ class Auth_Controller {
 
             do_action( 'set_auth_cookie', $auth_cookie, $expire, $expiration, $user->ID, 'auth', $token );
 
+            $data   = array();
+			$data['id'] = $user->ID;
+			$data['username'] = $user->user_login;
+			$data['name'] = $user->display_name;
+			$data['first_name'] = $user->first_name;
+			$data['last_name'] = $user->last_name;
+			$data['email'] = $user->user_email;
+			$data['url'] = $user->user_url;
+			$data['description'] = $user->description;
+			$data['locale'] = get_user_locale( $user );
+			$data['nickname'] = $user->nickname;
+			$data['slug'] = $user->user_nicename;
+			$data['roles'] = array_values( $user->roles );
+			$data['capabilities'] = (object) $user->allcaps;
+			$data['extra_capabilities'] = (object) $user->caps;
+            $data['avatar_urls'] = rest_get_avatar_urls( $user );
+            
+            $controller = new WP_REST_Users_Controller;
+            $response_data = $controller->prepare_response_for_collection( $data );
+
             return wp_send_json_success(
                 array(
                     'authorization' => $auth_cookie,
-                    'user' => $user
+                    'user' => $response_data
                 )
             );
         } catch (\Exception $ex) {
