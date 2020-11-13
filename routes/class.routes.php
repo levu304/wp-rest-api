@@ -55,9 +55,6 @@ class Wordpress_REST_API {
                 'callback' => array(
                     'Auth_Controller', 'sign_out'
                 ),
-                'permission_callback' => array(
-                    'Auth_Controller', 'authentication'
-                ),
             ),
         ) );
 
