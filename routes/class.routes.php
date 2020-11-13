@@ -6,6 +6,7 @@ require_once( API__PLUGIN_DIR . 'controllers/class.auth-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.option-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.settings-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.user-controller.php' );
+require_once( API__PLUGIN_DIR . 'controllers/class.post-controller.php' );
 
 class Wordpress_REST_API {
 
@@ -237,6 +238,20 @@ class Wordpress_REST_API {
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( 'User_Controller', 'generate_password' ),
 					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+				),
+			)
+        );
+
+         /**
+         * POSTS CONTROLLER
+         */
+
+        register_rest_route(
+			self::$API_ROUTE, '/posts',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( 'Post_Controller', 'get_posts' ),
 				),
 			)
         );
