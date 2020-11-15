@@ -4,17 +4,11 @@ class Role_Controller {
 
     public function get_roles($request) {  
         try {
-            $headers = apache_request_headers();
-            $auth_cookie = $headers['Authorization'];
-            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
-
-            $user = get_user_by('login', $cookies['username']);
-            if (!user_can($user->ID, 'promote_users')) {
-                return wp_send_json_error(
-                    array(
-                        'message' => 'No permission'
-                    ),
-                    401
+            if (!current_user_can('promote_users')) {
+                return new WP_Error(
+                    'rest_forbidden_context',
+                    __( 'Sorry, you are not allowed to promote users' ),
+                    array( 'status' => rest_authorization_required_code() )
                 );
             }
             global $wp_roles;
@@ -43,17 +37,11 @@ class Role_Controller {
 
     public function get_role($request) {  
         try {
-            $headers = apache_request_headers();
-            $auth_cookie = $headers['Authorization'];
-            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
-
-            $user = get_user_by('login', $cookies['username']);
-            if (!user_can($user->ID, 'promote_users')) {
-                return wp_send_json_error(
-                    array(
-                        'message' => 'No permission'
-                    ),
-                    401
+            if (!current_user_can('promote_users')) {
+                return new WP_Error(
+                    'rest_forbidden_context',
+                    __( 'Sorry, you are not allowed to promote users' ),
+                    array( 'status' => rest_authorization_required_code() )
                 );
             }
 
@@ -85,17 +73,11 @@ class Role_Controller {
 
     public function add_role($request) {
         try {
-            $headers = apache_request_headers();
-            $auth_cookie = $headers['Authorization'];
-            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
-
-            $user = get_user_by('login', $cookies['username']);
-            if (!user_can($user->ID, 'promote_users')) {
-                return wp_send_json_error(
-                    array(
-                        'message' => 'No permission'
-                    ),
-                    401
+            if (!current_user_can('promote_users')) {
+                return new WP_Error(
+                    'rest_forbidden_context',
+                    __( 'Sorry, you are not allowed to promote users' ),
+                    array( 'status' => rest_authorization_required_code() )
                 );
             }
 
@@ -140,17 +122,11 @@ class Role_Controller {
 
     public function edit_role_capabilities($request) {
         try {
-            $headers = apache_request_headers();
-            $auth_cookie = $headers['Authorization'];
-            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
-
-            $user = get_user_by('login', $cookies['username']);
-            if (!user_can($user->ID, 'promote_users')) {
-                return wp_send_json_error(
-                    array(
-                        'message' => 'No permission'
-                    ),
-                    401
+            if (!current_user_can('promote_users')) {
+                return new WP_Error(
+                    'rest_forbidden_context',
+                    __( 'Sorry, you are not allowed to promote users' ),
+                    array( 'status' => rest_authorization_required_code() )
                 );
             }
             $body = json_decode($request->get_body());
@@ -192,17 +168,11 @@ class Role_Controller {
 
     public function remove_role($request) {
         try {
-            $headers = apache_request_headers();
-            $auth_cookie = $headers['Authorization'];
-            $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
-
-            $user = get_user_by('login', $cookies['username']);
-            if (!user_can($user->ID, 'promote_users')) {
-                return wp_send_json_error(
-                    array(
-                        'message' => 'No permission'
-                    ),
-                    401
+            if (!current_user_can('promote_users')) {
+                return new WP_Error(
+                    'rest_forbidden_context',
+                    __( 'Sorry, you are not allowed to promote users' ),
+                    array( 'status' => rest_authorization_required_code() )
                 );
             }
 

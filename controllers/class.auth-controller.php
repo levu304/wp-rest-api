@@ -40,8 +40,10 @@ class Auth_Controller {
             $token   = $manager->create( $expiration );
 
             $auth_cookie = wp_generate_auth_cookie( $user->ID, $expiration, 'auth', $token );
+            $logged_in_cookie = wp_generate_auth_cookie( $user->ID, $expiration, 'logged_in', $token );
 
             do_action( 'set_auth_cookie', $auth_cookie, $expire, $expiration, $user->ID, 'auth', $token );
+            do_action( 'set_logged_in_cookie', $logged_in_cookie, $expire, $expiration, $user->ID, 'logged_in', $token );
 
             $data   = array();
 			$data['id'] = $user->ID;
@@ -221,6 +223,13 @@ class Auth_Controller {
         if(!isset($auth_cookie) || $auth_cookie == ''){
             return false;
         }
-        return wp_validate_auth_cookie($auth_cookie, 'auth');
+        $result = wp_validate_auth_cookie($auth_cookie, 'auth');
+        if(!$result){
+            return $result;
+        }
+        $cookies = wp_parse_auth_cookie($auth_cookie, 'auth');
+		$user = get_user_by('login', $cookies['username']);
+        wp_set_current_user($user->ID);
+        return true;
     }
 }
