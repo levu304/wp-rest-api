@@ -15,6 +15,7 @@ class User_Controller {
         
         $response = $controller->get_items($request);
         $data = $response->data;
+        $users = array();
 
         foreach ($data as $key => $value) {
             $posts = (int)count_user_posts($value['id']);
