@@ -14,10 +14,17 @@ class User_Controller {
         }
         
         $response = $controller->get_items($request);
+        $data = $response->data;
+
+        foreach ($data as $key => $value) {
+            $posts = (int)count_user_posts($value['id']);
+            $value['posts'] = $posts;
+            $users [] = $value;
+        }
 
 		return wp_send_json( array(
             'success' => true,
-            'data' => $response->data
+            'data' => $users
         ), 200 );
     }
 
@@ -41,9 +48,7 @@ class User_Controller {
     }
 
     public function create_user( $request ) {
-
 		$controller = new WP_REST_Users_Controller;
-		
 		$result = $controller->create_item_permissions_check($request);
         if(is_wp_error($result)) {
             return wp_send_json_error(
