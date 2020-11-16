@@ -3,7 +3,7 @@
 class Post_Controller {
 
     public function get_posts($request) {
-		$controller = new WP_REST_Posts_Controller('post');
+		$controller = new WP_REST_Posts_Controller($request['post_type']);
 		if ( 'edit' === $request['context']) {
 			$headers = apache_request_headers();
 			$auth_cookie = $headers['Authorization'];
