@@ -26,10 +26,27 @@ class Post_Controller {
 		}
 
 		$response = $controller->get_items($request);
+		$posts = array();
+
+		foreach ($response->data as $key => $value) {
+			$post = array();
+			$post['id'] = $value['id'];
+			$post['title'] = $value['title']['raw'];
+			$post['slug'] = $value['slug'];
+			$post['author'] = array();
+			$post['author']['id'] = $value['author'];
+			$post['author']['display_name'] = get_the_author_meta('display_name', $value['author']);
+			$post['categories'] = wp_get_post_categories($value['id'], array('fields' => 'all'));
+			$post['tags'] = wp_get_post_tags($value['id'], array('fields' => 'all'));
+			$post['comments'] = get_comments(array('post_id' => $value['id']));
+			$post['date'] = $value['date'];
+			$post['status'] = $value['status'];
+			$posts[] = $post;
+		}
 
 		return wp_send_json( array(
             'success' => true,
-            'data' => $response->data
+            'data' => $posts
         ), 200 );
 	}
 }
