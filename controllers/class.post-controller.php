@@ -36,8 +36,8 @@ class Post_Controller {
 			$post['author'] = array();
 			$post['author']['id'] = $value['author'];
 			$post['author']['display_name'] = get_the_author_meta('display_name', $value['author']);
-			$post['categories'] = wp_get_post_categories($value['id'], array('fields' => 'all'));
-			$post['tags'] = wp_get_post_tags($value['id'], array('fields' => 'all'));
+			$post['categories'] = get_the_category($value['id']);
+			$post['tags'] = get_the_tags($value['id']);
 			$post['comments'] = get_comments(array('post_id' => $value['id']));
 			$post['date'] = $value['date'];
 			$post['status'] = $value['status'];
