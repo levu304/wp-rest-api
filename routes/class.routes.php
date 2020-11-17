@@ -7,6 +7,7 @@ require_once( API__PLUGIN_DIR . 'controllers/class.option-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.settings-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.user-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.post-controller.php' );
+require_once( API__PLUGIN_DIR . 'controllers/class.category-controller.php' );
 
 class Wordpress_REST_API {
 
@@ -252,6 +253,20 @@ class Wordpress_REST_API {
 				array(
 					'methods'             => WP_REST_Server::READABLE,
 					'callback'            => array( 'Post_Controller', 'get_posts' ),
+				),
+			)
+        );
+
+        /**
+         * POSTS CONTROLLER
+         */
+
+        register_rest_route(
+			self::$API_ROUTE, '/categories',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( 'Category_Controller', 'get_categories' ),
 				),
 			)
         );

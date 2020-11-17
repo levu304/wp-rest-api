@@ -41,6 +41,9 @@ class Post_Controller {
 			$post['comments'] = get_comments(array('post_id' => $value['id']));
 			$post['date'] = $value['date'];
 			$post['status'] = $value['status'];
+			$post['password'] = $value['password'];
+			$post['ping_status'] = $value['ping_status'];
+			$post['comment_status'] = $value['comment_status'];
 			$posts[] = $post;
 		}
 
