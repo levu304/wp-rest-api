@@ -252,7 +252,8 @@ class Wordpress_REST_API {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( 'Post_Controller', 'get_posts' ),
+                    'callback'            => array( 'Post_Controller', 'get_posts' ),
+                    // 'args'                => array( 'Post_Controller', 'get_collection_params' ),
 				),
 			)
         );
@@ -266,7 +267,8 @@ class Wordpress_REST_API {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-					'callback'            => array( 'Category_Controller', 'get_categories' ),
+                    'callback'            => array( 'Category_Controller', 'get_categories' ),
+                    'args'                => array( 'Category_Controller', 'get_collection_params' ),
 				),
 			)
         );
