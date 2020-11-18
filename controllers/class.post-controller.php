@@ -65,7 +65,7 @@ class Post_Controller {
 			'feed'          => '',
 			'feed_image'    => '',
 			'feed_type'     => '',
-			'echo'          => true,
+			'echo'          => false,
 			'style'         => 'list',
 			'html'          => true,
 			'exclude'       => '',
@@ -74,22 +74,25 @@ class Post_Controller {
 
 		$query_args = wp_array_slice_assoc( $args, array( 'orderby', 'order', 'number', 'exclude', 'include' ) );
 		$query_args['fields'] = 'ids';
-		$authors = get_users( $query_args );
+		$users_id = get_users( $query_args );
 		$response = array();
 
-		foreach ( $authors as $author_id ) {
-			$author = get_userdata( $author_id );
-			if ( $args['exclude_admin'] && 'admin' === $author->display_name ) {
+		foreach ( $users_id as $user_id ) {
+			$user = get_userdata( $user_id );
+			if($user->roles[0] == 'subscriber') {
 				continue;
 			}
-			if ( $args['show_fullname'] && $author->first_name && $author->last_name ) {
-				$name = "$author->first_name $author->last_name";
+			if ( $args['exclude_admin'] && 'admin' === $user->display_name ) {
+				continue;
+			}
+			if ( $args['show_fullname'] && $user->first_name && $user->last_name ) {
+				$name = "$user->first_name $user->last_name";
 			} else {
-				$name = $author->display_name;
+				$name = $user->display_name;
 			}
 
 			$response[] = array(
-				'id' => $author_id,
+				'id' => $user_id,
 				'name' => $name
 			);
 		}
