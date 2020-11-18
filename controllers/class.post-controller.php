@@ -52,4 +52,51 @@ class Post_Controller {
             'data' => $posts
         ), 200 );
 	}
+
+	public function get_authors($request) {
+		$args = array(
+			'orderby'       => 'name',
+			'order'         => 'ASC',
+			'number'        => '',
+			'optioncount'   => false,
+			'exclude_admin' => false,
+			'show_fullname' => true,
+			'hide_empty'    => false,
+			'feed'          => '',
+			'feed_image'    => '',
+			'feed_type'     => '',
+			'echo'          => true,
+			'style'         => 'list',
+			'html'          => true,
+			'exclude'       => '',
+			'include'       => '',
+		);
+
+		$query_args = wp_array_slice_assoc( $args, array( 'orderby', 'order', 'number', 'exclude', 'include' ) );
+		$query_args['fields'] = 'ids';
+		$authors = get_users( $query_args );
+		$response = array();
+
+		foreach ( $authors as $author_id ) {
+			$author = get_userdata( $author_id );
+			if ( $args['exclude_admin'] && 'admin' === $author->display_name ) {
+				continue;
+			}
+			if ( $args['show_fullname'] && $author->first_name && $author->last_name ) {
+				$name = "$author->first_name $author->last_name";
+			} else {
+				$name = $author->display_name;
+			}
+
+			$response[] = array(
+				'id' => $author_id,
+				'name' => $name
+			);
+		}
+		
+		return wp_send_json( array(
+            'success' => true,
+            'data' => $response
+        ), 200 );
+	}
 }

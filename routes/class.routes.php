@@ -258,6 +258,18 @@ class Wordpress_REST_API {
 			)
         );
 
+        register_rest_route(
+			self::$API_ROUTE, '/authors',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => array( 'Post_Controller', 'get_authors' ),
+                    'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+				),
+			)
+        );
+
+
         /**
          * POSTS CONTROLLER
          */
