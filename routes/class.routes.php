@@ -259,11 +259,60 @@ class Wordpress_REST_API {
         );
 
         register_rest_route(
+			self::$API_ROUTE,
+			'/post/(?P<id>[\d]+)',
+			array(
+				'args'   => array(
+					'id' => array(
+						'description' => __( 'Unique identifier for the object.' ),
+						'type'        => 'integer',
+					),
+				),
+				// array(
+				// 	'methods'             => WP_REST_Server::READABLE,
+				// 	'callback'            => array( $this, 'get_item' ),
+				// 	'permission_callback' => array( $this, 'get_item_permissions_check' ),
+				// 	'args'                => $get_item_args,
+				// ),
+				array(
+					'methods'             => WP_REST_Server::EDITABLE,
+					'callback'            => array( 'Post_Controller', 'update_post' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					// 'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+				),
+				// array(
+				// 	'methods'             => WP_REST_Server::DELETABLE,
+				// 	'callback'            => array( $this, 'delete_item' ),
+				// 	'permission_callback' => array( $this, 'delete_item_permissions_check' ),
+				// 	'args'                => array(
+				// 		'force' => array(
+				// 			'type'        => 'boolean',
+				// 			'default'     => false,
+				// 			'description' => __( 'Whether to bypass trash and force deletion.' ),
+				// 		),
+				// 	),
+				// ),
+				'schema' => array( 'REST_controller', 'get_rest_public_item_schema' ),
+			)
+		);
+
+        register_rest_route(
 			self::$API_ROUTE, '/authors',
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
                     'callback'            => array( 'Post_Controller', 'get_authors' ),
+                    'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+				),
+			)
+        );
+
+        register_rest_route(
+			self::$API_ROUTE, '/post-statuses',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => array( 'Post_Controller', 'get_statuses' ),
                     'permission_callback' => array( 'Auth_Controller', 'authentication' ),
 				),
 			)

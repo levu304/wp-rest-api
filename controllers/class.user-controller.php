@@ -80,7 +80,7 @@ class User_Controller {
         return wp_send_json( array(
             'success' => true,
             'data' => $response->data
-        ), 201 );
+        ), 200 );
 	}
 	
 	public function generate_password($request) {

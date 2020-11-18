@@ -44,12 +44,31 @@ class Post_Controller {
 			$post['password'] = $value['password'];
 			$post['ping_status'] = $value['ping_status'];
 			$post['comment_status'] = $value['comment_status'];
+			$post['sticky'] = $value['sticky'];
 			$posts[] = $post;
 		}
 
 		return wp_send_json( array(
             'success' => true,
             'data' => $posts
+        ), 200 );
+	}
+
+	public function update_post($request) {
+		$controller = new WP_REST_Posts_Controller($request['post_type']);
+		$result = $controller->update_item_permissions_check($request);
+        if(is_wp_error($result)) {
+            return wp_send_json_error(
+                $result,
+                400
+            );
+		}
+		
+		$response = $controller->update_item($request);
+
+        return wp_send_json( array(
+            'success' => true,
+            'data' => $response->data
         ), 200 );
 	}
 
@@ -97,6 +116,23 @@ class Post_Controller {
 			);
 		}
 		
+		return wp_send_json( array(
+            'success' => true,
+            'data' => $response
+        ), 200 );
+	}
+
+	public function get_statuses($request) {	
+		
+		$statuses = get_post_statuses();
+		$response = array();
+
+		foreach ( $statuses as $key => $value ) {
+			$response[] = array(
+				'key' => $key,
+				'name' => $value
+			);
+		}
 		return wp_send_json( array(
             'success' => true,
             'data' => $response
