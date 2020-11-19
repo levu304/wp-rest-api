@@ -55,7 +55,7 @@ class Post_Controller {
 	}
 
 	public function update_post($request) {
-		$controller = new WP_REST_Posts_Controller($request['post_type']);
+		$controller = new WP_REST_Posts_Controller('post');
 		$result = $controller->update_item_permissions_check($request);
         if(is_wp_error($result)) {
             return wp_send_json_error(
@@ -65,6 +65,10 @@ class Post_Controller {
 		}
 		
 		$response = $controller->update_item($request);
+
+		if(is_wp_error($response)){
+			return $response;
+		}
 
         return wp_send_json( array(
             'success' => true,

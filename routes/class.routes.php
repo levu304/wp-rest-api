@@ -278,7 +278,7 @@ class Wordpress_REST_API {
 					'methods'             => WP_REST_Server::EDITABLE,
 					'callback'            => array( 'Post_Controller', 'update_post' ),
 					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
-					// 'args'                => $this->get_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
+					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema( WP_REST_Server::EDITABLE ),
 				),
 				// array(
 				// 	'methods'             => WP_REST_Server::DELETABLE,
