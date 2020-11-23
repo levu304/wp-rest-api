@@ -1,8 +1,8 @@
 <?php
 
-class Category_Controller {
+class Term_Controller {
 
-    public function get_categories($request) {
+     public function get_terms($request) {
         if ( 'edit' === $request['context']) {
 			$headers = apache_request_headers();
 			$auth_cookie = $headers['Authorization'];
@@ -20,7 +20,7 @@ class Category_Controller {
 			}
 		}
 		
-		$controller = new WP_REST_Terms_Controller('category');
+		$controller = new WP_REST_Terms_Controller($request['taxonomy']);
 		if ( !isset( $request['include'] ) ) {
 			$request['include'] = array();
 		}
@@ -59,9 +59,28 @@ class Category_Controller {
         ), 200 );
 
 	}
+
+	public function create_term($request) {
+		$controller = new WP_REST_Terms_Controller($request['taxonomy']);
+		$result = $controller->create_item_permissions_check($request);
+        if(is_wp_error($result)) {
+            return wp_send_json_error(
+                $result,
+                400
+            );
+		}
+		$response = $controller->create_item($request);
+
+		return $response;
+
+        return wp_send_json( array(
+            'success' => true,
+            'data' => $response->data
+        ), 201 );
+	}
 	
 	public function get_collection_params() {
-		$controller = new WP_REST_Terms_Controller('category');
+		$controller = new WP_REST_Terms_Controller($request['taxonomy']);
         return $controller->get_collection_params();
 	}
 }

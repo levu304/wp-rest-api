@@ -7,7 +7,7 @@ require_once( API__PLUGIN_DIR . 'controllers/class.option-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.settings-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.user-controller.php' );
 require_once( API__PLUGIN_DIR . 'controllers/class.post-controller.php' );
-require_once( API__PLUGIN_DIR . 'controllers/class.category-controller.php' );
+require_once( API__PLUGIN_DIR . 'controllers/class.term-controller.php' );
 
 class Wordpress_REST_API {
 
@@ -320,7 +320,7 @@ class Wordpress_REST_API {
 
 
         /**
-         * POSTS CONTROLLER
+         * CATEGORIES CONTROLLER
          */
 
         register_rest_route(
@@ -328,9 +328,38 @@ class Wordpress_REST_API {
 			array(
 				array(
 					'methods'             => WP_REST_Server::READABLE,
-                    'callback'            => array( 'Category_Controller', 'get_categories' ),
-                    'args'                => array( 'Category_Controller', 'get_collection_params' ),
+                    'callback'            => array( 'Term_Controller', 'get_terms' ),
+                    'args'                => array( 'Term_Controller', 'get_collection_params' ),
+                ),
+                array(
+					'methods'             => WP_REST_Server::CREATABLE,
+                    'callback'            => array( 'Term_Controller', 'create_term' ),
+                    'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
 				),
+				'schema' => array( 'REST_controller', 'get_rest_public_item_schema' ),
+			)
+        );
+
+        /**
+         * TAGS CONTROLLER
+         */
+
+        register_rest_route(
+			self::$API_ROUTE, '/tags',
+			array(
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+                    'callback'            => array( 'Term_Controller', 'get_terms' ),
+                    'args'                => array( 'Term_Controller', 'get_collection_params' ),
+                ),
+                array(
+					'methods'             => WP_REST_Server::CREATABLE,
+                    'callback'            => array( 'Term_Controller', 'create_term' ),
+                    'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema( WP_REST_Server::CREATABLE ),
+				),
+				'schema' => array( 'REST_controller', 'get_rest_public_item_schema' ),
 			)
         );
 
