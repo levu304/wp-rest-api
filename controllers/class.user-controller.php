@@ -82,26 +82,6 @@ class User_Controller {
             'data' => $response->data
         ), 200 );
 	}
-	
-	public function generate_password($request) {
-		try {
-
-			$hashPassword = wp_generate_password();
-
-			return wp_send_json( array(
-				'success' => true,
-				'data' => $hashPassword
-			), 200 );
-            
-        } catch (\Exception $ex) {
-            return wp_send_json_error(
-                array(
-                    'message' => $ex->getMessage()
-                ),
-                500
-            );
-        } 
-	}
 
     public function get_collection_params() {
         $controller = new WP_REST_Users_Controller;
