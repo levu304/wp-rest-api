@@ -194,6 +194,12 @@ class Wordpress_REST_API {
 					'callback'            => array( 'User_Controller', 'create_user' ),
 					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
 					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
+                ),
+                array(
+					'methods'             => WP_REST_Server::DELETABLE,
+					'callback'            => array( 'User_Controller', 'delete_users' ),
+					'permission_callback' => array( 'Auth_Controller', 'authentication' ),
+					'args'                => $rest_controller->get_rest_endpoint_args_for_item_schema(WP_REST_Server::CREATABLE),
 				),
                 'schema' => array( 'REST_controller', 'get_rest_public_item_schema' ),
 			)
