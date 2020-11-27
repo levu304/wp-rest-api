@@ -82,16 +82,41 @@ class User_Controller {
             'data' => $response->data
         ), 200 );
     }
+
+    public function update_users_role( $request ) {
+        $users = get_users( array('include' => $request['users']) );
+
+        $controller = new WP_REST_Users_Controller;
+        $error = null;
+        $results = array();
+
+        foreach ($users as $user) {
+            $id = $user->ID;
+
+            if ( ! empty( $request['roles'] ) && ! current_user_can( 'promote_user', $id ) ) {
+                $error = new WP_Error(
+                    'rest_cannot_edit_roles',
+                    __( 'Sorry, you are not allowed to edit roles of this user.' ),
+                    array( 'status' => rest_authorization_required_code() )
+                );
+                break;
+            }
+            if ( ! empty( $request['roles'] ) ) {
+                $results[] = array_map( array( $user, 'set_role' ), $request['roles'] );
+            }
+        }
+
+        if(!is_null($error)){
+            return $error;
+        }
+
+        return wp_send_json( array(
+            'success' => true,
+            'data' => $results
+        ), 200 );
+    }
     
     public function delete_users( $request ) {
-		
-		if ( ! current_user_can( 'delete_user' ) ) {
-			return new WP_Error(
-				'rest_user_cannot_delete',
-				__( 'Sorry, you are not allowed to delete this user.' ),
-				array( 'status' => rest_authorization_required_code() )
-			);
-		}
 
         // We don't support delete requests in multisite.
 		if ( is_multisite() ) {
@@ -108,17 +133,27 @@ class User_Controller {
 			return $users;
         }
 
-        $controller = new WP_REST_Users_Controller; 
+        $controller = new WP_REST_Users_Controller;
+        $error = null;
         $results = array();
         
         foreach ($users as $user) {
-            $id       = $user->ID;
+            $id = $user->ID;
+
+            if ( ! current_user_can( 'delete_user', $id ) ) {
+                $error = new WP_Error(
+                    'rest_user_cannot_delete',
+                    __( 'Sorry, you are not allowed to delete this user.' ),
+                    array( 'status' => rest_authorization_required_code() )
+                );
+                break;
+            }
 		    $reassign = false === $request['reassign'] ? null : absint( $request['reassign'] );
             $force    = isset( $request['force'] ) ? (bool) $request['force'] : false;
             
             // We don't support trashing for users.
             if ( ! $force ) {
-                $result[] = new WP_Error(
+                $error = new WP_Error(
                     'rest_trash_not_supported',
                     /* translators: %s: force=true */
                     sprintf( __( "Users do not support trashing. Set '%s' to delete." ), 'force=true' ),
@@ -129,7 +164,7 @@ class User_Controller {
 
             if ( ! empty( $reassign ) ) {
                 if ( $reassign === $id || ! get_userdata( $reassign ) ) {
-                    $result[] = new WP_Error(
+                    $error = new WP_Error(
                         'rest_user_invalid_reassign',
                         __( 'Invalid user ID for reassignment.' ),
                         array( 'status' => 400 )
@@ -145,7 +180,7 @@ class User_Controller {
             $result = wp_delete_user( $id, $reassign );
             
             if ( ! $result ) {
-                $result[] = new WP_Error(
+                $error = new WP_Error(
                     'rest_cannot_delete',
                     __( 'The user cannot be deleted.' ),
                     array( 'status' => 500 )
@@ -172,6 +207,10 @@ class User_Controller {
             do_action( 'rest_delete_user', $user, $response, $request );
 
             $results[] = $response->data;
+        }
+
+        if(!is_null($error)){
+            return $error;
         }
 
         return wp_send_json( array(
